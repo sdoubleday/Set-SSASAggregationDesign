@@ -64,7 +64,6 @@ Describe "CLASS FakePartition" {
 } <#END Describe "CLASS FakePartition"#>
 
 DESCRIBE "Fake-SSASServer" {
-
     IT "(Fake-SSASServer -SSASInstance 'Whatever').Name | SHOULD BE 'ImAServerISwear'" {
         (Fake-SSASServer -SSASInstance 'Whatever').Name | SHOULD BE 'ImAServerISwear' }
 
@@ -102,33 +101,65 @@ DESCRIBE "Fake-SSASServer" {
 
 Describe "Set-SSASAggregationDesign" {
     BEFOREALL{
-        MOCK -CommandName Get-SSASServer -ModuleName .\Set-SSASAggregationDesign -MockWith {Fake-SSASServer -SSASInstance 'Whatever'} -Verifiable
-        MOCK -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName .\Set-SSASAggregationDesign -MockWith {1} -Verifiable
+        MOCK -CommandName Get-SSASServer -ModuleName Set-SSASAggregationDesign -MockWith {Fake-SSASServer -SSASInstance 'Whatever'} -Verifiable
+        MOCK -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -MockWith {1} -Verifiable
+        MOCK -CommandName Set-SSASPartitionAggregationDesignAndProcessIndex -ModuleName Set-SSASAggregationDesign -MockWith {} -Verifiable
     }
 
-    It "Set-SSASAggregationDesign on one partition WITH aggregations: Assert-MockCalled -CommandName Get-SSASServer -ModuleName .\Set-SSASAggregationDesign -Scope It -Times 1 -Exactly" { 
-        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'ImNotADb' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -PartitionName 'PartitionName2' 
-        Assert-MockCalled -CommandName Get-SSASServer -ModuleName .\Set-SSASAggregationDesign -Scope It -Times 1 -Exactly
+    It "Set-SSASAggregationDesign on one partition WITH aggregations: Assert-MockCalled -CommandName Get-SSASServer -ModuleName Set-SSASAggregationDesign -Scope It -Times 1 -Exactly" { 
+        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -PartitionName 'PartitionName2' 
+        Assert-MockCalled -CommandName Get-SSASServer -ModuleName Set-SSASAggregationDesign -Scope It -Times 1 -Exactly
     }
 
-    It "Set-SSASAggregationDesign on one partition WITHOUT aggregations: Assert-MockCalled -CommandName Get-SSASServer -ModuleName .\Set-SSASAggregationDesign -Scope It -Times 1 -Exactly" { 
-        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'ImNotADb' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -PartitionName 'PartitionName2' 
-        Assert-MockCalled -CommandName Get-SSASServer -ModuleName .\Set-SSASAggregationDesign -Scope It -Times 1 -Exactly
+    It "Set-SSASAggregationDesign on one partition WITHOUT aggregations: Assert-MockCalled -CommandName Get-SSASServer -ModuleName Set-SSASAggregationDesign -Scope It -Times 1 -Exactly" { 
+        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -PartitionName 'PartitionName2' 
+        Assert-MockCalled -CommandName Get-SSASServer -ModuleName Set-SSASAggregationDesign -Scope It -Times 1 -Exactly
     }
 
-    It "Set-SSASAggregationDesign on one partition WITH aggregations: Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName .\Set-SSASAggregationDesign -Scope It -Times 1 -Exactly" { 
-        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'ImNotADb' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -PartitionName 'PartitionName3' 
-        Assert-MockCalled -CommandName Get-SSASServer -ModuleName .\Set-SSASAggregationDesign -Scope It -Times 1 -Exactly
+    It "Set-SSASAggregationDesign on one partition WITH aggregations: Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 1 -Exactly" { 
+        $result = Try {Set-SSASAggregationDesign -Verbose -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -PartitionName 'PartitionName3' } catch {$error[0].Exception.GetBaseException().Message.ToString()}
+        $result | Write-Verbose -Verbose
+        Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 1 -Exactly
     }
 
-    It "Set-SSASAggregationDesign on one partition WITHOUT aggregations: Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName .\Set-SSASAggregationDesign -Scope It -Times 1 -Exactly" { 
-        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'ImNotADb' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -PartitionName 'PartitionName3' 
-        Assert-MockCalled -CommandName Get-SSASServer -ModuleName .\Set-SSASAggregationDesign -Scope It -Times 1 -Exactly
+    It "Set-SSASAggregationDesign on one partition WITHOUT aggregations: Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 1 -Exactly" { 
+        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -PartitionName 'PartitionName3' 
+        Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 1 -Exactly
     }
 
-    It "Set-SSASAggregationDesign on a MeasureGroup of 4 partitions, half WITHOUT aggregations: Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName .\Set-SSASAggregationDesign -Scope It -Times 1 -Exactly" { 
-        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'ImNotADb' -CubeName 'Cube2' -MeasureGroupName 'Mg1'
-        Assert-MockCalled -CommandName Get-SSASServer -ModuleName .\Set-SSASAggregationDesign -Scope It -Times 4 -Exactly
+    It "Set-SSASAggregationDesign on a MeasureGroup of 4 partitions, half WITHOUT aggregations: Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 4 -Exactly" { 
+        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1'
+        Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 4 -Exactly
+    }
+
+    It "Set-SSASAggregationDesign on a MeasureGroup of 4 partitions, half WITHOUT aggregations WITHOUT -Fix: Assert-MockCalled -CommandName Set-SSASPartitionAggregationDesignAndProcessIndex -ModuleName Set-SSASAggregationDesign -Scope It -Times 0 -Exactly" { 
+        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1'
+        Assert-MockCalled -CommandName Set-SSASPartitionAggregationDesignAndProcessIndex -ModuleName Set-SSASAggregationDesign -Scope It -Times 0 -Exactly
+    }
+    
+    It "Set-SSASAggregationDesign on a MeasureGroup of 4 partitions, half WITHOUT aggregations WITH -Fix: Assert-MockCalled -CommandName Set-SSASPartitionAggregationDesignAndProcessIndex -ModuleName Set-SSASAggregationDesign -Scope It -Times 2 -Exactly" { 
+        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -Fix
+        Assert-MockCalled -CommandName Set-SSASPartitionAggregationDesignAndProcessIndex -ModuleName Set-SSASAggregationDesign -Scope It -Times 2 -Exactly
     }
 
 }<#End Describe "Set-SSASAggregationDesign" #>
+
+Describe "Set-SSASAggregationDesign - without core mocked out - for observation" {
+    BEFOREALL{
+        MOCK -CommandName Get-SSASServer -ModuleName Set-SSASAggregationDesign -MockWith {Fake-SSASServer -SSASInstance 'Whatever'} -Verifiable
+        MOCK -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -MockWith {0} -Verifiable
+        $skip = $false
+    }
+
+    It -Skip:$skip "Set-SSASAggregationDesign on a MeasureGroup of 4 partitions, half WITHOUT aggregations WITH -Fix: Should return no errors" {
+        $result = $null 
+        TRY {Set-SSASAggregationDesign -Verbose -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -Fix } CATCH {$result = $error[0].Exception.GetBaseException().Message.ToString()}
+        $result | SHOULD BE $null
+    }
+
+
+}<#End Describe "Set-SSASAggregationDesign - without core mocked out - for observation"#>
+
+
+
+

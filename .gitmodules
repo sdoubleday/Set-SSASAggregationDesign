@@ -1,0 +1,3 @@
+[submodule "GetCallerPreference"]
+	path = GetCallerPreference
+	url = https://github.com/sdoubleday/GetCallerPreference.git
