@@ -80,6 +80,7 @@ FUNCTION Get-SSASServer {
 [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.AnalysisServices")
 $server = New-Object Microsoft.AnalysisServices.Server
 $server.connect($ssasInstance)
+Return $server
 } <#End FUNCTION Get-SSASServer#>
 
 FUNCTION Get-SSASPartitionAggregationsProcessedCount {
@@ -169,11 +170,26 @@ https://redphoenix.me/2014/11/11/setting-aggregation-designs-on-ssas-partitions-
 
  )
  
+ #region Echo parameters (https://stackoverflow.com/questions/21559724/getting-all-named-parameters-from-powershell-including-empty-and-set-ones)
+ Write-Verbose "Echoing parameters:"
+ $ParameterList = (Get-Command -Name $MyInvocation.InvocationName).Parameters;
+ foreach ($key in $ParameterList.keys)
+ {
+     $var = Get-Variable -Name $key -ErrorAction SilentlyContinue;
+     if($var)
+     {
+         Write-Verbose "$($var.name): $($var.value)"
+     }
+ }
+ Write-Verbose "Parameters done."
+ #endregion Echo parameters
   
 [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.AnalysisServices")
 $server = Get-SSASServer -ssasInstance $ssasInstance
+Write-Verbose "List of Databases on server $($server.Name):"
+$server.Databases.Name | Write-Verbose
 $database=$server.databases
-$dbase=$database | Where-Object {$_.Name -Like $ssasdb}
+$dbase= $database | Where-Object {$_.Name -Like $ssasdb}
 
 "Database name: $($dbase.Name)" | Write-Verbose
 
