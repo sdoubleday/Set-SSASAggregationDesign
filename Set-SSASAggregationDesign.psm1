@@ -100,27 +100,30 @@ PARAM($ssasInstance,$dbase,$cube,$mg,$partition)
  } <#END Get-SSASPartitionAggregationsProcessedCount#>
 
 FUNCTION Set-SSASPartitionAggregationDesignAndProcessIndex {
+[CmdletBinding()]
 PARAM([Parameter(Mandatory=$true)]$partition,[Parameter(Mandatory=$true)][INT]$processedAggCount)
-
+BEGIN{Get-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState}<#End Begin#>
+PROCESS{
  $partition.AggregationDesignID = $partition.Parent.AggregationDesigns[$partition.Parent.AggregationDesigns.Count-1].ID
  $partition.Update()
+ "Partition $($partition.Name)'s new AggregationDesignID is $($partition.AggregationDesignID)" | Write-Verbose
  $totalAggCount = $partition.AggregationDesign.Aggregations.Count
 
-    <#sdoubleday moved this into if ( $partition.Parent.AggregationDesigns.Count -gt 0) for easier use of whatif#>
      if ($totalAggCount -ne $processedAggCount)
      {
   
-         "$($partition.Name) aggregation design $($partition.AggregationDesignID) has $processedAggCount of $totalAggCount processed "
+         "$($partition.Name) aggregation design $($partition.AggregationDesignID) has $processedAggCount of $totalAggCount processed " | Write-Verbose
             if ( $partition.Parent.AggregationDesigns.Count -gt 0)
             {
                 $date1=get-date
-                "$($partition.Name) processing..."
+                "$($partition.Name) processing..." | Write-Verbose
                 $partition.Process("ProcessIndexes")
                 $date2=get-date
-                "$($partition.Name) done. Processing took " + ($date2-$date1).Hours + " Hours, " + ($date2-$date1).Minutes + " Mins, " + ($date2-$date1).Seconds + " Secs "
+                "$($partition.Name) done. Processing took " + ($date2-$date1).Hours + " Hours, " + ($date2-$date1).Minutes + " Mins, " + ($date2-$date1).Seconds + " Secs " | Write-Verbose
             }<#End if ( $partition.Parent.AggregationDesigns.Count -gt 0)#>
      }<#END IF ($totalAggCount -ne $processedAggCount)#>
- 
+ }<#END Process#> 
+ END{}<#End END#>
  }<#END FUNCTION Set-SSASPartitionAggregationDesignAndProcessIndex#>
 
 
@@ -131,7 +134,9 @@ Script to review SSAS partitions' assigned aggregations and optionally
 assign aggregations to partitions that have none.
 
 .DESCRIPTION
-Initial version an exact copy of Richie Lee's script (see links, below).
+Assigns to an SSAS Measure Group Partition the last aggregation assigned to the prior partition.
+Can apply to a whole SSAS Database, one Cube, one Measure Group, or one Partition.
+Run with -Verbose to view output.
 
 .LINK
 https://redphoenix.me/2014/11/11/setting-aggregation-designs-on-ssas-partitions-part-two/
@@ -141,37 +146,37 @@ https://redphoenix.me/2014/11/11/setting-aggregation-designs-on-ssas-partitions-
 [CmdletBinding(DefaultParameterSetName ="Default",SupportsShouldProcess=$true <#Enables -Confirm and -Whatif#>)]
                  
  param(
- [Parameter(Position=0,mandatory=$true)]
+ [Parameter(mandatory=$true)]
  [string] $ssasInstance,
  
- [Parameter(Position=1,mandatory=$true)]
+ [Parameter(mandatory=$true)]
  [string] $ssasdb,
  
- [Parameter(Position=2)]
+ [Parameter()]
  [switch] $Fix,
  
- [Parameter(mandatory=$true,ParameterSetName='MeasureGroup')]
- [Parameter(mandatory=$true,ParameterSetName='Partition')]
- [Parameter(mandatory=$true,ParameterSetName='Cube')]
+ [Parameter(Mandatory=$true,ParameterSetName='Cube')]
+ [Parameter(Mandatory=$true,ParameterSetName='MeasureGroup')]
+ [Parameter(Mandatory=$true,ParameterSetName='Partition')]
  [String]$CubeName,
  
- [Parameter(mandatory=$true,ParameterSetName='MeasureGroup')]
- [Parameter(mandatory=$true,ParameterSetName='Partition')]
- [Parameter(mandatory=$true)]
+ [Parameter(Mandatory=$true,ParameterSetName='MeasureGroup')]
+ [Parameter(Mandatory=$true,ParameterSetName='Partition')]
  [String]$MeasureGroupName,
  
- [Parameter(mandatory=$true,ParameterSetName='Partition')]
- [Parameter(mandatory=$true)]
+ [Parameter(Mandatory=$true,ParameterSetName='Partition')]
  [String]$PartitionName
 
  )
  
- 
+  
 [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.AnalysisServices")
 $server = Get-SSASServer -ssasInstance $ssasInstance
 $database=$server.databases
-$dbase=$database[$ssasdb]
- 
+$dbase=$database | Where-Object {$_.Name -Like $ssasdb}
+
+"Database name: $($dbase.Name)" | Write-Verbose
+
 $Cubes=New-object Microsoft.AnalysisServices.Cube
 
 IF ( $PSCmdlet.ParameterSetName -in 'Cube','MeasureGroup','Partition' ) {
@@ -183,7 +188,8 @@ ELSE {
 
 foreach ($cube in $cubes)
  {
-     $Cube|select name,state,lastprocessed 
+     Write-Verbose "Cube information"
+     $Cube|select name,state,lastprocessed | Write-Verbose
 
      IF ( $PSCmdlet.ParameterSetName -in 'MeasureGroup','Partition' ) {
         $MeasureGroups = $Cubes.MeasureGroups | Where-Object {$_.Name -like $MeasureGroupName}
@@ -195,6 +201,7 @@ foreach ($cube in $cubes)
 
      foreach ($mg in $MeasureGroups)
      {
+        "MeasureGroup Name $($mg.Name)" | Write-Verbose
 
          IF ( $PSCmdlet.ParameterSetName -in 'Partition' ) {
             $Partitions = $MeasureGroups.Partitions | Where-Object {$_.Name -like $PartitionName}
@@ -206,20 +213,24 @@ foreach ($cube in $cubes)
 
          foreach ($partition in $Partitions)
          {
-             Write-Verbose -Verbose "Partition Name: $($partition.Name), Partition Object Type: $($partition.GetType().Name)"
+
+             Write-Verbose "Partition Name: $($partition.Name), Partition Object Type: $($partition.GetType().Name)"
              Write-Debug "Partition Name: $($partition.Name), Partition Object Type: $($partition.GetType().Name)"
  
              $processedAggCount = Get-SSASPartitionAggregationsProcessedCount -ssasInstance $ssasInstance -dbase $dbase -cube $cube -mg $mg -partition $partition
- 
-             $totalAggCount = $partition.AggregationDesign.Aggregations.Count
+            
              if($partition.AggregationDesignID.Length -lt 1)
              {
-                "$($partition.Name) does not have an aggregation design applied"
+                 Write-Verbose "$($partition.Name) does not have an aggregation design applied"
+ 
+                 Write-Verbose "Designs available on the parent:"
+                 $partition.Parent.AggregationDesigns | Select Name, ID | Write-Verbose
+
                  if ($fix.IsPresent)
                  {
                      if ( $partition.Parent.AggregationDesigns.Count -gt 0)
                      {
-                         <#sdoubleday More Information in the agg assignment message#>
+
                          $message = "$($partition.Name) assigning and ProcessIndex aggregation design ID $($partition.Parent.AggregationDesigns[$partition.Parent.AggregationDesigns.Count-1].ID), Name $($partition.Parent.AggregationDesigns[$partition.Parent.AggregationDesigns.Count-1].Name)"
                          If ($PSCmdlet.ShouldProcess($message)) { 
     
@@ -228,7 +239,7 @@ foreach ($cube in $cubes)
                          } <#End ShouldProcess#>
                      } <#END if ( $partition.Parent.AggregationDesigns.Count -gt 0)#>
 
-                     else {"$($partition.Name) does not have a aggregation design created for it. Ignoring..."} <#End Else ( $partition.Parent.AggregationDesigns.Count -gt 0) #>
+                     else {Write-Verbose "$($partition.Name) does not have a aggregation design created for it. Ignoring..."} <#End Else ( $partition.Parent.AggregationDesigns.Count -gt 0) #>
 
                  } <#END if ($fix.IsPresent)#>
 
