@@ -1,0 +1,2 @@
+#for specific files I want to exclude, prefix with gitignore
+gitignore*.*
