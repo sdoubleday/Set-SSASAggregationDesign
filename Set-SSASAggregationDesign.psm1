@@ -247,7 +247,7 @@ foreach ($cube in $cubes)
          foreach ($partition in $Partitions)
          {
 
-             Write-Verbose "Partition Name: $($partition.Name), Partition Object Type: $($partition.GetType().Name)"
+             Write-Verbose "Partition Name: $($partition.Name), Partition Object Type: $($partition.GetType().Name), Partition's Aggregation Design ID: $($partition.AggregationDesignID)"
              Write-Debug "Partition Name: $($partition.Name), Partition Object Type: $($partition.GetType().Name)"
  
              $processedAggCount = Get-SSASPartitionAggregationsProcessedCount -ssasInstance $ssasInstance -dbase $dbase -cube $cube -mg $mg -partition $partition
