@@ -132,6 +132,16 @@ Describe "Set-SSASAggregationDesign" {
         Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 4 -Exactly
     }
 
+    It "Set-SSASAggregationDesign on a cube with 3 MeasureGroups of 4 partitions, half WITHOUT aggregations: Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 12 -Exactly" { 
+        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2'
+        Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 12 -Exactly
+    }
+
+    It "Set-SSASAggregationDesign on a database with 3 cubes, each with 3 MeasureGroups of 4 partitions, half WITHOUT aggregations: Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 36 -Exactly" { 
+        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3'
+        Assert-MockCalled -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -Scope It -Times 36 -Exactly
+    }
+
     It "Set-SSASAggregationDesign on a MeasureGroup of 4 partitions, half WITHOUT aggregations WITHOUT -Fix: Assert-MockCalled -CommandName Set-SSASPartitionAggregationDesignAndProcessIndex -ModuleName Set-SSASAggregationDesign -Scope It -Times 0 -Exactly" { 
         Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1'
         Assert-MockCalled -CommandName Set-SSASPartitionAggregationDesignAndProcessIndex -ModuleName Set-SSASAggregationDesign -Scope It -Times 0 -Exactly

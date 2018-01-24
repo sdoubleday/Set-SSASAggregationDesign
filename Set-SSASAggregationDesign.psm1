@@ -225,10 +225,10 @@ foreach ($cube in $cubes)
      $Cube|select name,state,lastprocessed | Write-Verbose
 
      IF ( $PSCmdlet.ParameterSetName -in 'MeasureGroup','Partition' ) {
-        $MeasureGroups = $Cubes.MeasureGroups | Where-Object {$_.Name -like $MeasureGroupName}
+        $MeasureGroups = $cube.MeasureGroups | Where-Object {$_.Name -like $MeasureGroupName}
      }<#END IF ( $PSCmdlet.ParameterSetName -in 'MeasureGroup','Partition' )#>
      ELSE {
-        $MeasureGroups = $Cubes.MeasureGroups
+        $MeasureGroups = $cube.MeasureGroups
      }<#END ELSE ( $PSCmdlet.ParameterSetName -in 'MeasureGroup','Partition' )#>
   
 
@@ -237,10 +237,10 @@ foreach ($cube in $cubes)
         "MeasureGroup Name $($mg.Name)" | Write-Verbose
 
          IF ( $PSCmdlet.ParameterSetName -in 'Partition' ) {
-            $Partitions = $MeasureGroups.Partitions | Where-Object {$_.Name -like $PartitionName}
+            $Partitions = $mg.Partitions | Where-Object {$_.Name -like $PartitionName}
          }<#END IF ( $PSCmdlet.ParameterSetName -in 'Partition' )#>
          ELSE {
-            $Partitions = $MeasureGroups.Partitions
+            $Partitions = $mg.Partitions
          }<#END ELSE ( $PSCmdlet.ParameterSetName -in 'Partition' )#>
  
 
