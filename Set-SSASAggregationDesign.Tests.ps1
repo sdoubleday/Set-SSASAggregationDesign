@@ -144,6 +144,30 @@ Describe "Set-SSASAggregationDesign" {
 
 }<#End Describe "Set-SSASAggregationDesign" #>
 
+
+Describe "Set-SSASAggregationDesign - testing -DoNotProcess" {
+    BEFOREALL{
+        MOCK -CommandName Get-SSASServer -ModuleName Set-SSASAggregationDesign -MockWith {Fake-SSASServer -SSASInstance 'Whatever'} -Verifiable
+        MOCK -CommandName Get-SSASPartitionAggregationsProcessedCount -ModuleName Set-SSASAggregationDesign -MockWith {0} -Verifiable
+        MOCK -CommandName Process-SSASIndex -ModuleName Set-SSASAggregationDesign -MockWith {} -Verifiable
+    }
+
+    It "Set-SSASAggregationDesign on a MeasureGroup of 4 partitions, half WITHOUT aggregations WITH -Fix -DoNotProcessIndex: Assert-MockCalled -CommandName Process-SSASIndex -ModuleName Set-SSASAggregationDesign -Scope It -Times 0 -Exactly" { 
+        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -Fix -DoNotProcessIndex
+        Assert-MockCalled -CommandName Process-SSASIndex -ModuleName Set-SSASAggregationDesign -Scope It -Times 0 -Exactly
+    }
+
+    It "Set-SSASAggregationDesign on a MeasureGroup of 4 partitions, half WITHOUT aggregations WITH -Fix (and not -DoNotProcessIndex): Assert-MockCalled -CommandName Process-SSASIndex -ModuleName Set-SSASAggregationDesign -Scope It -Times 2 -Exactly" { 
+        Set-SSASAggregationDesign -SSASInstance 'ImNotAServer' -ssasDb 'Db3' -CubeName 'Cube2' -MeasureGroupName 'Mg1' -Fix
+        Assert-MockCalled -CommandName Process-SSASIndex -ModuleName Set-SSASAggregationDesign -Scope It -Times 2 -Exactly
+    }
+
+
+
+}<#END Describe "Set-SSASAggregationDesign - testing -DoNotProcess" #>
+
+
+
 Describe "Set-SSASAggregationDesign - without core mocked out - for observation" {
     BEFOREALL{
         MOCK -CommandName Get-SSASServer -ModuleName Set-SSASAggregationDesign -MockWith {Fake-SSASServer -SSASInstance 'Whatever'} -Verifiable
