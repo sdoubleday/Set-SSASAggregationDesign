@@ -100,9 +100,23 @@ PARAM($ssasInstance,$dbase,$cube,$mg,$partition)
  Return $DataExtract.Count
  } <#END Get-SSASPartitionAggregationsProcessedCount#>
 
+FUNCTION Process-SSASIndex {
+    [CMDLETBINDING()]
+    PARAM($partition)
+    BEGIN{Get-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState}<#End Begin#>
+    PROCESS {
+        $date1=get-date
+        "$($partition.Name) processing..." | Write-Verbose
+        $partition.Process("ProcessIndexes")
+        $date2=get-date
+        "$($partition.Name) done. Processing took " + ($date2-$date1).Hours + " Hours, " + ($date2-$date1).Minutes + " Mins, " + ($date2-$date1).Seconds + " Secs " | Write-Verbose
+    } <#End PROCESS#>
+    END{}<#End END#>
+}<#END FUNCTION Process-SSASIndex #>
+
 FUNCTION Set-SSASPartitionAggregationDesignAndProcessIndex {
 [CmdletBinding()]
-PARAM([Parameter(Mandatory=$true)]$partition,[Parameter(Mandatory=$true)][INT]$processedAggCount)
+PARAM([Parameter(Mandatory=$true)]$partition,[Parameter(Mandatory=$true)][INT]$processedAggCount,[Switch]$DoNotProcessIndex)
 BEGIN{Get-CallerPreference -Cmdlet $PSCmdlet -SessionState $ExecutionContext.SessionState}<#End Begin#>
 PROCESS{
  $partition.AggregationDesignID = $partition.Parent.AggregationDesigns[$partition.Parent.AggregationDesigns.Count-1].ID
@@ -110,17 +124,15 @@ PROCESS{
  "Partition $($partition.Name)'s new AggregationDesignID is $($partition.AggregationDesignID)" | Write-Verbose
  $totalAggCount = $partition.AggregationDesign.Aggregations.Count
 
-     if ($totalAggCount -ne $processedAggCount)
+     if ($totalAggCount -ne $processedAggCount -and -not $DoNotProcessIndex.IsPresent)
      {
   
          "$($partition.Name) aggregation design $($partition.AggregationDesignID) has $processedAggCount of $totalAggCount processed " | Write-Verbose
             if ( $partition.Parent.AggregationDesigns.Count -gt 0)
             {
-                $date1=get-date
-                "$($partition.Name) processing..." | Write-Verbose
-                $partition.Process("ProcessIndexes")
-                $date2=get-date
-                "$($partition.Name) done. Processing took " + ($date2-$date1).Hours + " Hours, " + ($date2-$date1).Minutes + " Mins, " + ($date2-$date1).Seconds + " Secs " | Write-Verbose
+
+                Process-SSASIndex -partition $partition
+
             }<#End if ( $partition.Parent.AggregationDesigns.Count -gt 0)#>
      }<#END IF ($totalAggCount -ne $processedAggCount)#>
  }<#END Process#> 
@@ -156,6 +168,9 @@ https://redphoenix.me/2014/11/11/setting-aggregation-designs-on-ssas-partitions-
  [Parameter()]
  [switch] $Fix,
  
+ [Parameter()]
+ [switch] $DoNotProcessIndex,
+
  [Parameter(Mandatory=$true,ParameterSetName='Cube')]
  [Parameter(Mandatory=$true,ParameterSetName='MeasureGroup')]
  [Parameter(Mandatory=$true,ParameterSetName='Partition')]
@@ -167,6 +182,8 @@ https://redphoenix.me/2014/11/11/setting-aggregation-designs-on-ssas-partitions-
  
  [Parameter(Mandatory=$true,ParameterSetName='Partition')]
  [String]$PartitionName
+
+
 
  )
  
@@ -250,7 +267,7 @@ foreach ($cube in $cubes)
                          $message = "$($partition.Name) assigning and ProcessIndex aggregation design ID $($partition.Parent.AggregationDesigns[$partition.Parent.AggregationDesigns.Count-1].ID), Name $($partition.Parent.AggregationDesigns[$partition.Parent.AggregationDesigns.Count-1].Name)"
                          If ($PSCmdlet.ShouldProcess($message)) { 
     
-                            Set-SSASPartitionAggregationDesignAndProcessIndex -partition $partition -processedAggCount $processedAggCount
+                            Set-SSASPartitionAggregationDesignAndProcessIndex -partition $partition -processedAggCount $processedAggCount -DoNotProcessIndex:$($DoNotProcessIndex.IsPresent)
 
                          } <#End ShouldProcess#>
                      } <#END if ( $partition.Parent.AggregationDesigns.Count -gt 0)#>
