@@ -69,7 +69,7 @@ Copyright = '(c) 2018 sdoubleday. All rights reserved.'
 NestedModules = @('.\GetCallerPreference\GetCallerPreference.psm1')
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Set-SSASAggregationDesign','Fake-SSASServer'
+FunctionsToExport = 'Set-SSASAggregationDesign','Fake-SSASServer','Get-SSASServer'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
